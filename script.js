@@ -1,12 +1,12 @@
 const express = require('express');
 const cors = require('cors');
-const puppeteer = require('puppeteer');
+const puppeteer = require('puppeteer'); 
 const app = express();
 
 app.use(cors());
 
 app.get('/', (req, res) => {
-    res.send('Mepco Bill Checker API is running!');
+    res.send('Mepco Bill Checker API is running perfectly!');
 });
 
 app.get('/check-bill', async (req, res) => {
@@ -17,17 +17,18 @@ app.get('/check-bill', async (req, res) => {
     try {
         browser = await puppeteer.launch({ 
             headless: "new", 
-            // Render ke liye zaroori arguments
-            executablePath: '/usr/bin/google-chrome', 
             args: [
                 '--no-sandbox', 
                 '--disable-setuid-sandbox',
-                '--disable-dev-shm-usage',
+                '--single-process',
                 '--no-zygote'
-            ] 
+            ]
         });
         
         const page = await browser.newPage();
+        // User agent set karna zaroori hai taake site block na kare
+        await page.setUserAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36");
+        
         await page.goto('https://bill.pitc.com.pk/', { waitUntil: 'networkidle2' });
         
         await page.type('input[name="ref"]', ref);
@@ -41,7 +42,7 @@ app.get('/check-bill', async (req, res) => {
         res.json({ status: "success", htmlPreview: billData });
     } catch (error) {
         if (browser) await browser.close();
-        res.status(500).json({ error: "Failed to fetch: " + error.message });
+        res.status(500).json({ error: "Scraping failed: " + error.message });
     }
 });
 

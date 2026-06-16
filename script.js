@@ -7,7 +7,7 @@ const app = express();
 app.use(cors());
 
 app.get('/', (req, res) => {
-    res.send('Mepco Bill Checker API is running with Puppeteer Core!');
+    res.send('Mepco Bill Checker API is running stable!');
 });
 
 app.get('/check-bill', async (req, res) => {
@@ -24,19 +24,23 @@ app.get('/check-bill', async (req, res) => {
         });
         
         const page = await browser.newPage();
-        await page.setUserAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36");
+        await page.setUserAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
         
-        await page.goto('https://bill.pitc.com.pk/', { waitUntil: 'networkidle2' });
+        // Timeout barha kar 60 seconds kar diya hai
+        await page.goto('https://bill.pitc.com.pk/', { waitUntil: 'domcontentloaded', timeout: 60000 });
         
+        // Wait for the input field to be available
+        await page.waitForSelector('input[name="ref"]', { timeout: 30000 });
         await page.type('input[name="ref"]', ref);
         await page.click('button[type="submit"]');
         
-        await page.waitForSelector('table', { timeout: 20000 });
+        // Table ke load hone ka wait karein
+        await page.waitForSelector('table', { timeout: 30000 });
 
         const billData = await page.evaluate(() => document.body.innerText);
         await browser.close();
         
-        res.json({ status: "success", htmlPreview: billData });
+        res.json({ status: "success", data: billData });
     } catch (error) {
         if (browser) await browser.close();
         res.status(500).json({ error: "Scraping failed: " + error.message });

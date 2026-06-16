@@ -1,36 +1,32 @@
 const express = require('express');
 const cors = require('cors');
 const axios = require('axios');
-const cheerio = require('cheerio');
 const app = express();
 
 app.use(cors());
-
-app.get('/', (req, res) => {
-    res.send('Mepco Bill Checker API is running fast using Axios!');
-});
 
 app.get('/check-bill', async (req, res) => {
     const ref = req.query.ref;
     if (!ref) return res.status(400).json({ error: "Reference number required" });
 
+    // ScraperAPI ki key
+    const API_KEY = 'fd222ed124e2235dbf32623c598e30cf';
+
     try {
-        // MEPCO ki website ka form submit karna
-        const response = await axios.post('https://bill.pitc.com.pk/mepcobill/general', 
-            `ref=${ref}`, {
-            headers: { 
-                'Content-Type': 'application/x-www-form-urlencoded',
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+        // MEPCO ki site par request bhejne ka naya tareeqa
+        const response = await axios.get('http://api.scraperapi.com', {
+            params: {
+                api_key: API_KEY,
+                url: 'https://bill.pitc.com.pk/mepcobill/general',
+                render: 'false', // Browser nahi kholna, direct data chahiye
+                // MEPCO ke liye POST request zaroori hai, isliye hum scraper ko instruct kar rahe hain
+                keep_headers: 'true'
             }
         });
 
-        const $ = cheerio.load(response.data);
-        const billData = $('body').text(); 
-
-        // Agar result table mil jaye
-        res.json({ status: "success", data: billData });
+        res.json({ status: "success", data: response.data });
     } catch (error) {
-        res.status(500).json({ error: "Failed to fetch: " + error.message });
+        res.status(500).json({ error: "Scraping failed: " + error.message });
     }
 });
 

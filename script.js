@@ -1,12 +1,13 @@
 const express = require('express');
 const cors = require('cors');
-const puppeteer = require('puppeteer'); 
+const puppeteer = require('puppeteer-core'); 
+const chromium = require('@sparticuz/chromium');
 const app = express();
 
 app.use(cors());
 
 app.get('/', (req, res) => {
-    res.send('Mepco Bill Checker API is running perfectly!');
+    res.send('Mepco Bill Checker API is running with Puppeteer Core!');
 });
 
 app.get('/check-bill', async (req, res) => {
@@ -15,18 +16,14 @@ app.get('/check-bill', async (req, res) => {
 
     let browser;
     try {
-        browser = await puppeteer.launch({ 
-            headless: "new", 
-            args: [
-                '--no-sandbox', 
-                '--disable-setuid-sandbox',
-                '--single-process',
-                '--no-zygote'
-            ]
+        browser = await puppeteer.launch({
+            args: chromium.args,
+            defaultViewport: chromium.defaultViewport,
+            executablePath: await chromium.executablePath(),
+            headless: chromium.headless,
         });
         
         const page = await browser.newPage();
-        // User agent set karna zaroori hai taake site block na kare
         await page.setUserAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36");
         
         await page.goto('https://bill.pitc.com.pk/', { waitUntil: 'networkidle2' });
